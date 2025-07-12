@@ -10,39 +10,67 @@ namespace ParserCSV
         static void Main(string[] args)
         {
             string file = @"../../../table.csv";
-            using (var reader = new StreamReader(file))
-            using (var csv = new CsvReader(reader, CultureInfo.InvariantCulture))
+            List<User> users = new List<User>();
+
+            if (File.Exists(file))
             {
-                var records = csv.GetRecords<User>().ToList();
-                foreach(var r in records)
+                #region Чтение всех в файле
+                using (var reader = new StreamReader(file))
+                using (var csv = new CsvReader(reader, CultureInfo.InvariantCulture))
                 {
-                    Console.WriteLine($"{r.Name}, {r.Age}, {r.City}");
+                    var records = csv.GetRecords<User>().ToList();
+                    foreach (var r in records)
+                    {
+                        Console.WriteLine($"{r.Name}, {r.Age}, {r.City}");
+                    }
+
                 }
+                #endregion
 
-                List<User> users = new List<User>();
+                #region Ввод данных
+                Console.WriteLine("Введите имя: ");
+                string name = Console.ReadLine();
 
-                var A = records.Where(w => w.Name.Contains('A'));
-                Console.Write($"\nИмена на A: ");
+                Console.WriteLine("Введите возраст: ");
+                int age = int.Parse(Console.ReadLine());
 
-                foreach (var thisUser in A)
+                Console.Write("Введите город: ");
+                string city = Console.ReadLine();
+                #endregion
+
+                User newUser = new User { Name = name, Age = age, City = city };
+                users.Add(newUser);
+
+                #region Есть ли такой файл?
+                bool fileExists = File.Exists(file);
+                bool writeHeader = !fileExists || new FileInfo("table.csv").Length == 0;
+                #endregion
+
+                #region Запись(Добавление) информации
+                using (var stream = new FileStream(file, FileMode.Append, FileAccess.Write))
+                using (var writer = new StreamWriter(stream))
+                using (var csvWriter = new CsvWriter(writer, CultureInfo.InvariantCulture))
                 {
-                    users.Add(thisUser);
-                    Console.Write(thisUser.Name + " ");
+                    if (writeHeader)
+                    {
+                         csvWriter.WriteHeader<User>();
+                         csvWriter.NextRecord();
+                    }
+                    csvWriter.WriteRecord(newUser);
+                    csvWriter.NextRecord();
+
                 }
-
-                double avgAge = records.Average(s => s.Age);
-                Console.WriteLine($"\nСредний возраст: {avgAge:F2}");
-
+                Console.WriteLine("Данные записаны в table.csv");
+                #endregion
             }
+        }
+
+        class User
+        {
+            public string Name { get; set; }
+            public int Age { get; set; }
+            public string City { get; set; }
 
         }
-    }
-
-    class User
-    {
-        public string Name { get; set; }
-        public int Age { get; set; }
-        public string City { get; set; }
-
     }
 }
